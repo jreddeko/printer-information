@@ -7,7 +7,7 @@ using System.IO;
 using System.Drawing.Printing;
 using System.Drawing;
 
-namespace GetPrinterInformation
+namespace PrintInformationWin32Console
 {
     internal class ApplicationArguments
     {
@@ -19,12 +19,8 @@ namespace GetPrinterInformation
     {
         static void Main(string[] args)
         {
-            var asdf = System.Drawing.Printing.PrinterSettings.InstalledPrinters;
-            PrintDocument pd = new PrintDocument();
-            pd.PrinterSettings.PrinterName = "Microsoft Print to PDF";
             var p = new FluentCommandLineParser<ApplicationArguments>();
-
-            // specify which property the value will be assigned too.
+            
             p.Setup(arg => arg.PrinterName)
                 .As('n', "name")
                 .WithDescription("Select name of printer, if no name set will query all printers.");
@@ -43,10 +39,17 @@ namespace GetPrinterInformation
             else
             {
                 string query = String.IsNullOrEmpty(p.Object.PrinterName) ? string.Format("SELECT * from Win32_Printer")
-                    : string.Format("SELECT * from Win32_Printer where name = '{0}'", p.Object.PrinterName);
+                                    : string.Format("SELECT * from Win32_Printer where name = '{0}'", p.Object.PrinterName);
+                Run(query, p.Object.OutputFile);
+            }
+        }
 
-                var sb = new StringBuilder();
-                using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(query))
+        private static void Run(string query, string outputFile)
+        {
+
+            var sb = new StringBuilder();
+            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(query))
+            {
                 using (ManagementObjectCollection coll = searcher.Get())
                 {
                     try
@@ -82,8 +85,8 @@ namespace GetPrinterInformation
                         Console.WriteLine(ex.Message);
                     }
                 }
-                File.WriteAllText(p.Object.OutputFile, sb.ToString());
             }
+            File.WriteAllText(outputFile, sb.ToString());
         }
     }
 }
